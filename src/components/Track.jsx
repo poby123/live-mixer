@@ -1,47 +1,59 @@
-import React, { useState } from 'react';
+import React, { Component } from 'react';
 import AudioAnalyser from './AudioAnalyser';
 import PrettoSlider from './PrettoSlider';
 
-const Track = () => {
-  const [audio, setAudio] = useState(null);
+class Track extends Component {
+  constructor(props) {
+    super(props);
 
-  const getMicrophone = async () => {
+    this.state = {
+      audio: null,
+    };
+    this.audioContext = new AudioContext();
+  }
+
+  getMicrophone = async () => {
     const media = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false,
     });
-    setAudio(media);
+    this.setState({ audio: media });
   };
 
-  const stopMicrophone = () => {
-    audio.getTracks().forEach((track) => track.stop());
-    setAudio(null);
+  stopMicrophone = () => {
+    this.state.audio.getTracks().forEach((track) => track.stop());
+    this.setState({ audio: null });
   };
 
-  const toggleMicrophone = () => {
-    if (audio) {
-      stopMicrophone();
+  toggleMicrophone = () => {
+    if (this.state.audio) {
+      this.stopMicrophone();
     } else {
-      getMicrophone();
+      this.getMicrophone();
     }
   };
 
-  return (
-    <div className="Track">
-      <div className="controls">
-        <button onClick={toggleMicrophone}>
-          {audio ? 'Stop microphone' : 'Get microphone input'}
-        </button>
-        <PrettoSlider
-          valueLabelDisplay="auto"
-          aria-label="pretto slider"
-          defaultValue={20}
-          style={{ root: { color: 'red' } }}
-        />
+  render() {
+    return (
+      <div className="Track">
+        {/* <audio src="/에필로그.mp3" id="audio-file" controls/> */}
+        <div className="controls">
+          <button onClick={this.toggleMicrophone}>
+            {this.state.audio ? 'Stop microphone' : 'Get microphone input'}
+          </button>
+          <PrettoSlider valueLabelDisplay="auto" aria-label="pretto slider" defaultValue={20} />
+        </div>
+        {this.state.audio ? (
+          <AudioAnalyser
+            audio={this.state.audio}
+            audioContext={this.audioContext}
+          />
+        ) : (
+          ''
+        )}
       </div>
-      {audio ? <AudioAnalyser audio={audio} /> : ''}
-    </div>
-  );
-};
+    );
+  }
+}
 
 export default Track;

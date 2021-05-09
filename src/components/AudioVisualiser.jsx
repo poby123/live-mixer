@@ -35,7 +35,7 @@ class AudioVisualiser extends Component {
   }
 
   render() {
-    return <canvas width="300" height="300" ref={this.canvas} />;
+    return <canvas width="600" height="300" ref={this.canvas} />;
   }
 }
 
