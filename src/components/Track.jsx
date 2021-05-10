@@ -3,33 +3,54 @@ import AudioAnalyser from './AudioAnalyser';
 import PrettoSlider from './PrettoSlider';
 
 class Track extends Component {
+  state = {
+    audio: null,
+  };
+
   constructor(props) {
     super(props);
 
-    this.state = {
-      audio: null,
-    };
     this.audioContext = new AudioContext();
+    this.analyser = this.audioContext.createAnalyser();
+    this.gain = this.audioContext.createGain();
+    this.gain.connect(this.audioContext.destination);
+
+    this.source = null;
   }
 
   getMicrophone = async () => {
-    const media = await navigator.mediaDevices.getUserMedia({
+    return await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false,
     });
-    this.setState({ audio: media });
   };
 
   stopMicrophone = () => {
     this.state.audio.getTracks().forEach((track) => track.stop());
     this.setState({ audio: null });
+    this.clear();
   };
 
-  toggleMicrophone = () => {
+  componentWillUnmount() {
+    this.clear();
+  }
+
+  clear() {
+    this.analyser && this.analyser.disconnect();
+    this.source && this.source.disconnect();
+  }
+
+  toggleMicrophone = async () => {
     if (this.state.audio) {
       this.stopMicrophone();
     } else {
-      this.getMicrophone();
+      const media = await this.getMicrophone();
+      this.source = this.audioContext.createMediaStreamSource(media);
+
+      this.source.connect(this.analyser);
+      await this.audioContext.resume();
+
+      this.setState({ audio: media });
     }
   };
 
@@ -44,10 +65,7 @@ class Track extends Component {
           <PrettoSlider valueLabelDisplay="auto" aria-label="pretto slider" defaultValue={20} />
         </div>
         {this.state.audio ? (
-          <AudioAnalyser
-            audio={this.state.audio}
-            audioContext={this.audioContext}
-          />
+          <AudioAnalyser analyser={this.analyser} />
         ) : (
           ''
         )}
