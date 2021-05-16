@@ -11,55 +11,54 @@ class AudioRTA extends Component {
   }
 
   draw() {
+    const cri = [20, 60, 200, 400, 600, 1000, 3000, 5000, 10000, 20000];
+    let crii = 0;
     const { audioData } = this.props;
     const canvas = this.canvas.current;
-    const height = canvas.height;
+    const height = canvas.height; 
     const width = canvas.width;
+
+    const dbH = height - 20;
+    const textY = height - 8;
     const context = canvas.getContext('2d');
+    let sliceWidth = 37;
     let x = 0;
 
-    context.lineWidth = 2;
-    context.strokeStyle = '#000000';
-    context.clearRect(0, 0, width, height);
+    context.lineWidth = 1;
+    context.strokeStyle = '#54527D';
+    context.clearRect(0, 0, width, textY);
 
+    /* drawing */
     context.beginPath();
-    context.moveTo(0, height);
+    context.moveTo(0, dbH);
 
-    let sliceWidth = width / 25;
-    let temp = 10;
-    const frequency = 5 / audioData.length;
+    context.fillText(`RTA`, x, 0);
 
     for (let i = 0; i < audioData.length; i++) {
       const item = audioData[i];
-      const y = (item / 255.0) * height;
-
-      const r = Math.floor(Math.sin(frequency * i + 2) * 127 + 128);
-      const g = Math.floor(Math.sin(frequency * i + 4) * 127 + 128);
-      const b = Math.floor(Math.sin(frequency * i + 0) * 127 + 128);
-
-      context.fillStyle = `rgb(${r},${g},${b})`;
-      context.fillRect(x, height - y, sliceWidth, y);
-
+      const y = (item / 255.0) * dbH;
       const hz = (24000 / audioData.length) * i;
+      
+      /* draw db rectangle */
+      context.fillStyle = `#0093FC`;
+      context.fillRect(x, dbH - y, sliceWidth, y);
+
+      // draw vertical line
+      context.fillStyle = `#7876B5`;
+      if (hz > cri[crii] || i == audioData.length - 1) {
+        ++crii;
+        context.lineTo(x, dbH);
+        context.lineTo(x, 0);
+        context.lineTo(x, dbH);
+
+        const displayHz = hz > 1000 ? `${Math.round(hz / 1000)}K` : Math.round(hz);
+        context.fillText(displayHz, x, textY);
+        sliceWidth /= 1.8;
+      }
 
       x += sliceWidth;
-      if (hz > temp) {
-        context.lineTo(x, height);
-        context.lineTo(x, 0);
-        temp *= 10;
-        // console.log(hz);
-        sliceWidth *= 0.3;
-        context.lineTo(x, height);
-      }
-
-      if (i == audioData.length - 1) {
-        // console.log('Last : ' + hz);
-        context.lineTo(x, height);
-        context.lineTo(x, 0);
-        context.lineTo(x, height);
-      }
     }
-    context.lineTo(x, height);
+    context.lineTo(x, dbH);
     context.stroke();
   }
 
