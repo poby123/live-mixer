@@ -1,10 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import {withStyles} from '@material-ui/core/styles';
-import Slider from '@material-ui/core/Slider';
+import Slider from '@material-ui/core/Slider'; // API : https://material-ui.com/api/slider/
 
 export default (props) => {
-
     let style = {
         root: {
           color: '#52af77',
