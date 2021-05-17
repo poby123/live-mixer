@@ -5,6 +5,7 @@ import PrettoSlider from './PrettoSlider';
 class Track extends Component {
   state = {
     audio: null,
+    output: false,
   };
 
   constructor(props) {
@@ -12,10 +13,12 @@ class Track extends Component {
 
     this.audioContext = new AudioContext();
     this.analyser = this.audioContext.createAnalyser();
-    this.gain = this.audioContext.createGain();
-    this.gain.connect(this.audioContext.destination);
-
+    this.gainNode = this.audioContext.createGain();
     this.source = null;
+
+    this.gainValue = 1.0;
+
+    console.log(this.state);
   }
 
   getMicrophone = async () => {
@@ -47,28 +50,54 @@ class Track extends Component {
       const media = await this.getMicrophone();
       this.source = this.audioContext.createMediaStreamSource(media);
 
-      this.source.connect(this.analyser);
-      await this.audioContext.resume();
+      this.source.connect(this.gainNode).connect(this.analyser);
+
+      if(this.state.output){
+        this.analyser.connect(this.audioContext.destination);
+      }
+
+      if (this.audioContext.state == 'suspended') {
+        await this.audioContext.resume();
+      }
 
       this.setState({ audio: media });
     }
   };
 
+  toggleOutput = ()=> {
+    if (this.state.output) {
+      this.analyser.disconnect(this.audioContext.destination);
+    } else {
+      this.analyser.connect(this.audioContext.destination);
+    }
+    this.setState({ output: !this.state.output });
+  }
+
+  onChangeVolume(v) {
+    this.gainValue = v;
+    this.gainNode.gain.value = v;
+  }
+
   render() {
     return (
       <div className="Track">
-        {/* <audio src="/에필로그.mp3" id="audio-file" controls/> */}
         <div className="controls">
-          <button onClick={this.toggleMicrophone}>
-            {this.state.audio ? 'Stop microphone' : 'Get microphone input'}
+          <button onClick={this.toggleMicrophone}>{this.state.audio ? 'Mute' : 'Unmute'}</button>
+          % 울림주의 %
+          <button onClick={this.toggleOutput}>
+            {this.state.output ? '스피커 출력 끄기' : '스피커 출력 켜기'}
           </button>
-          <PrettoSlider valueLabelDisplay="auto" aria-label="pretto slider" defaultValue={20} />
+          <PrettoSlider
+            valueLabelDisplay="auto"
+            aria-label="pretto slider"
+            defaultValue={this.gainValue}
+            onChange={(e, v) => this.onChangeVolume(v)}
+            min={0}
+            max={8}
+            step={0.1}
+          />
         </div>
-        {this.state.audio ? (
-          <AudioAnalyser analyser={this.analyser} />
-        ) : (
-          ''
-        )}
+        {this.state.audio && <AudioAnalyser analyser={this.analyser} />}
       </div>
     );
   }
